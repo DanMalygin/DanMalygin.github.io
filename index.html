@@ -3,82 +3,469 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Pomodoro Timer</title>
+<title>LuxFocus Pomodoro Timer</title>
 <style>
+  /* Base Reset */
+  * {
+    box-sizing: border-box;
+    margin: 0; 
+    padding: 0;
+  }
+
   body {
-    font-family: sans-serif;
-    background: #f4f4f4;
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: center; 
-    height: 100vh; 
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #FCEBF3, #FFDBD9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
     margin: 0;
+    color: #333;
   }
-  .timer-container {
+
+  /* Container */
+  .timer-app {
     background: #fff;
-    border-radius: 8px;
-    padding: 20px 30px;
+    border-radius: 20px;
+    padding: 40px 50px;
     text-align: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+    position: relative;
+    max-width: 400px;
+    width: 90%;
+    transition: background 0.3s;
   }
-  h1 {
-    margin-bottom: 10px;
+
+  /* Dark mode */
+  body.dark {
+    background: linear-gradient(135deg, #2C2C54, #1B1B2F);
+    color: #eee;
   }
-  .time {
-    font-size: 3em; 
-    margin: 20px 0;
-    letter-spacing: 2px;
+  body.dark .timer-app {
+    background: #2B2B40;
+    color: #EEE;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
   }
-  button {
-    background: #FF6B6B; 
-    border: none; 
+  body.dark .actions button {
+    background: #4C4C72;
+  }
+  body.dark .actions button:hover {
+    background: #3C3C5B;
+  }
+  body.dark .mode-switcher button.active {
+    background: #504A86;
+  }
+
+  /* Title */
+  .timer-title {
+    font-size: 2em;
+    font-weight: 700;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .timer-title span {
+    display: inline-block;
+    background: linear-gradient(45deg, #FF6B6B, #FFA36C);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: hueRotate 8s linear infinite;
+  }
+
+  @keyframes hueRotate {
+    from {filter: hue-rotate(0deg);}
+    to {filter: hue-rotate(360deg);}
+  }
+
+  /* Mode Switcher */
+  .mode-switcher {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+    gap: 10px;
+  }
+
+  .mode-switcher button {
+    background: #FF6B6B;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 20px;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .mode-switcher button:hover {
+    background: #FF5050;
+  }
+
+  .mode-switcher button.active {
+    background: #FF5050;
+  }
+
+  /* Timer Circle */
+  .timer-circle {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto 25px;
+  }
+
+  .progress-ring {
+    transform: rotate(-90deg);
+    width: 100%;
+    height: 100%;
+  }
+
+  .progress-ring circle {
+    fill: transparent;
+    stroke-width: 12;
+    stroke-linecap: round;
+  }
+
+  .progress-ring__background {
+    stroke: #e6e6e6;
+  }
+
+  .progress-ring__progress {
+    stroke: #FF6B6B;
+    transition: stroke-dashoffset 0.5s linear;
+  }
+
+  .timer-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3em;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+
+  /* Actions */
+  .actions {
+    margin-top: 20px;
+  }
+
+  .actions button {
+    background: #FFA36C;
+    border: none;
     padding: 10px 20px;
-    border-radius: 20px; 
-    color: #fff; 
-    font-weight: bold; 
+    border-radius: 20px;
+    color: #fff;
+    font-weight: 600;
     font-size: 1em;
-    cursor: pointer; 
-    margin: 5px; 
+    cursor: pointer;
+    margin: 5px;
     box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+    transition: background 0.2s;
   }
-  button:hover {
-    background: #ff4f4f;
+
+  .actions button:hover {
+    background: #FF8E4F;
   }
+
+  /* Motivational Message */
   .motivational {
     margin-top: 15px;
     font-style: italic;
     color: #555;
     display: none;
+    font-size: 0.9em;
   }
+
+  body.dark .motivational {
+    color: #BBB;
+  }
+
+  /* Settings icon */
+  .settings-btn {
+    position: absolute;
+    top: 20px; 
+    right: 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    filter: brightness(1);
+    transition: filter 0.2s;
+  }
+
+  .settings-btn:hover {
+    filter: brightness(0.8);
+  }
+
+  .settings-icon {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+  }
+
+  /* Settings Panel */
+  .settings-panel {
+    position: fixed;
+    right: 20px;
+    top: 80px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    z-index: 999;
+    display: none;
+    width: 300px;
+  }
+  body.dark .settings-panel {
+    background: #2B2B40;
+    color: #EEE;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+  }
+
+  .settings-panel h2 {
+    margin-bottom: 15px;
+    font-size: 1.2em;
+  }
+
+  .settings-group {
+    margin-bottom: 20px;
+  }
+
+  .settings-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+
+  .settings-group input[type="number"], 
+  .settings-group select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 1em;
+  }
+  body.dark .settings-group input[type="number"], 
+  body.dark .settings-group select {
+    background: #3D3D54;
+    border: 1px solid #555;
+    color: #EEE;
+  }
+
+  .close-settings {
+    background: #FF6B6B;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+    float: right;
+  }
+
+  .toggle-theme-btn {
+    background: #6B6BFF;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+    margin-right: 10px;
+    float: left;
+  }
+
 </style>
 </head>
 <body>
-<div class="timer-container">
-  <h1>Focus Timer</h1>
-  <div class="time" id="timerDisplay">25:00</div>
-  <div>
+<div class="timer-app">
+  <button class="settings-btn" id="openSettings">
+    <svg class="settings-icon" viewBox="0 0 24 24"><path d="M19.14,12.936c0.016-0.307,0.016-0.619,0-0.926l2.018-1.577c0.179-0.139,0.229-0.389,0.119-0.591l-1.909-3.301
+    c-0.11-0.202-0.349-0.289-0.568-0.209l-2.379,0.962c-0.5-0.371-1.037-0.689-1.61-0.945l-0.359-2.539
+    c-0.032-0.223-0.223-0.387-0.45-0.387h-3.818c-0.227,0-0.418,0.164-0.45,0.387l-0.359,2.539c-0.573,0.256-1.11,0.575-1.61,0.945
+    l-2.379-0.962c-0.219-0.08-0.459,0.007-0.568,0.209l-1.909,3.301c-0.11,0.202-0.06,0.451,0.119,0.591L4.86,12.01
+    c-0.016,0.307-0.016,0.619,0,0.926l-2.018,1.577c-0.179,0.139-0.229,0.389-0.119,0.591l1.909,3.301
+    c0.11,0.202,0.349,0.289,0.568,0.209l2.379-0.962c0.5,0.371,1.037,0.689,1.61,0.945l0.359,2.539c0.032,0.223,0.223,0.387,0.45,0.387
+    h3.818c0.227,0,0.418-0.164,0.45-0.387l0.359-2.539c0.573-0.256,1.11-0.575,1.61-0.945l2.379,0.962
+    c0.219,0.08,0.459-0.007,0.568-0.209l1.909-3.301c0.11-0.202,0.06-0.451-0.119-0.591L19.14,12.936z M12,15.6
+    c-1.99,0-3.6-1.61-3.6-3.6s1.61-3.6,3.6-3.6c1.99,0,3.6,1.61,3.6,3.6S13.99,15.6,12,15.6z"/></svg>
+  </button>
+  <h1 class="timer-title">Focus<span>Pocus</span> Timer</h1>
+
+  <div class="mode-switcher">
+    <button data-mode="pomodoro" class="active">Pomodoro</button>
+    <button data-mode="short">Short Break</button>
+    <button data-mode="long">Long Break</button>
+  </div>
+
+  <div class="timer-circle">
+    <svg class="progress-ring" width="200" height="200">
+      <circle class="progress-ring__background" stroke="white" cx="100" cy="100" r="90"/>
+      <circle class="progress-ring__progress" stroke="white" cx="100" cy="100" r="90"/>
+    </svg>
+    <div class="timer-display" id="timerDisplay">25:00</div>
+  </div>
+
+  <div class="actions">
     <button id="startBtn">Start</button>
     <button id="pauseBtn">Pause</button>
     <button id="resetBtn">Reset</button>
   </div>
-  <div class="motivational" id="motivationalMsg">Great job! Time for a short break!</div>
+  <div class="motivational" id="motivationalMsg"></div>
 </div>
 
-<audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" preload="auto"></audio>
+<!-- Settings Panel -->
+<div class="settings-panel" id="settingsPanel">
+  <h2>Settings</h2>
+  <div class="settings-group">
+    <label for="pomodoroTime">Pomodoro Duration (minutes)</label>
+    <input type="number" id="pomodoroTime" min="1" max="60" value="25" />
+  </div>
+  <div class="settings-group">
+    <label for="shortBreakTime">Short Break (minutes)</label>
+    <input type="number" id="shortBreakTime" min="1" max="15" value="5" />
+  </div>
+  <div class="settings-group">
+    <label for="longBreakTime">Long Break (minutes)</label>
+    <input type="number" id="longBreakTime" min="1" max="30" value="15" />
+  </div>
+  <div class="settings-group">
+    <label for="alarmSound">Alarm Sound</label>
+    <select id="alarmSoundSelect">
+      <option value="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg">
+        Digital Watch
+      </option>
+      <option value="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
+        Alarm Clock
+      </option>
+      <option value="https://actions.google.com/sounds/v1/alarms/wakeup_birds.ogg">
+        Birds Chirping
+      </option>
+    </select>
+  </div>
+  <button class="toggle-theme-btn" id="toggleThemeBtn">Toggle Theme</button>
+  <button class="close-settings" id="closeSettings">Close</button>
+</div>
+
+<audio id="alarmSound" preload="auto"></audio>
 
 <script>
-  let timerDuration = 25 * 60; // 25 minutes
-  let remainingTime = timerDuration;
-  let timerInterval = null;
+  // Initial Config
+  let pomodoroTime = parseInt(localStorage.getItem('pomodoroTime')) || 25;
+  let shortBreakTime = parseInt(localStorage.getItem('shortBreakTime')) || 5;
+  let longBreakTime = parseInt(localStorage.getItem('longBreakTime')) || 15;
+  let chosenSound = localStorage.getItem('alarmSound') || 'https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg';
+  let currentMode = 'pomodoro'; // pomodoro, short, long
   let isRunning = false;
+  let remainingTime = pomodoroTime * 60;
+  let timerInterval = null;
 
+  const motivationalMessages = [
+    "Great job! Time for a short break!",
+    "You did awesome! Enjoy your well-earned break!",
+    "Focus warrior! Refresh and come back stronger!",
+    "Another session down. Excellent work!"
+  ];
+
+  // Elements
   const display = document.getElementById('timerDisplay');
   const startBtn = document.getElementById('startBtn');
   const pauseBtn = document.getElementById('pauseBtn');
   const resetBtn = document.getElementById('resetBtn');
   const motivationalMsg = document.getElementById('motivationalMsg');
   const alarmSound = document.getElementById('alarmSound');
+  alarmSound.src = chosenSound;
+  const modeButtons = document.querySelectorAll('.mode-switcher button');
+
+  const progressRing = document.querySelector('.progress-ring__progress');
+  const radius = progressRing.r.baseVal.value;
+  const circumference = 2 * Math.PI * radius;
+  progressRing.style.strokeDasharray = circumference;
+  progressRing.style.strokeDashoffset = circumference;
+
+  // Settings panel
+  const settingsPanel = document.getElementById('settingsPanel');
+  const openSettingsBtn = document.getElementById('openSettings');
+  const closeSettingsBtn = document.getElementById('closeSettings');
+  const pomodoroInput = document.getElementById('pomodoroTime');
+  const shortBreakInput = document.getElementById('shortBreakTime');
+  const longBreakInput = document.getElementById('longBreakTime');
+  const alarmSelect = document.getElementById('alarmSoundSelect');
+  const toggleThemeBtn = document.getElementById('toggleThemeBtn');
+
+  pomodoroInput.value = pomodoroTime;
+  shortBreakInput.value = shortBreakTime;
+  longBreakInput.value = longBreakTime;
+  alarmSelect.value = chosenSound;
+
+  // Theme toggle
+  let isDark = localStorage.getItem('theme') === 'dark';
+  if (isDark) {
+    document.body.classList.add('dark');
+  }
+
+  toggleThemeBtn.addEventListener('click', () => {
+    document.body.classList.toggle('dark');
+    isDark = document.body.classList.contains('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  });
+
+  // Open/Close settings
+  openSettingsBtn.addEventListener('click', () => {
+    settingsPanel.style.display = 'block';
+  });
+
+  closeSettingsBtn.addEventListener('click', () => {
+    // Save settings to localStorage
+    pomodoroTime = parseInt(pomodoroInput.value);
+    shortBreakTime = parseInt(shortBreakInput.value);
+    longBreakTime = parseInt(longBreakInput.value);
+    chosenSound = alarmSelect.value;
+
+    localStorage.setItem('pomodoroTime', pomodoroTime);
+    localStorage.setItem('shortBreakTime', shortBreakTime);
+    localStorage.setItem('longBreakTime', longBreakTime);
+    localStorage.setItem('alarmSound', chosenSound);
+
+    alarmSound.src = chosenSound;
+    updateMode(currentMode, false); // Update the timer if needed
+    settingsPanel.style.display = 'none';
+  });
+
+  // Mode switching
+  modeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      modeButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const mode = btn.getAttribute('data-mode');
+      updateMode(mode, true);
+    });
+  });
+
+  function updateMode(mode, reset = true) {
+    currentMode = mode;
+    let time;
+    switch(mode) {
+      case 'pomodoro':
+        time = pomodoroTime;
+        break;
+      case 'short':
+        time = shortBreakTime;
+        break;
+      case 'long':
+        time = longBreakTime;
+        break;
+    }
+    if (reset) {
+      pauseTimer();
+      remainingTime = time * 60;
+      updateDisplay();
+      updateProgress();
+      motivationalMsg.style.display = 'none';
+    }
+  }
 
   function formatTime(seconds) {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -90,6 +477,23 @@
     display.textContent = formatTime(remainingTime);
   }
 
+  function updateProgress() {
+    let fullTime;
+    switch(currentMode) {
+      case 'pomodoro':
+        fullTime = pomodoroTime * 60;
+        break;
+      case 'short':
+        fullTime = shortBreakTime * 60;
+        break;
+      case 'long':
+        fullTime = longBreakTime * 60;
+        break;
+    }
+    const offset = circumference - (remainingTime / fullTime) * circumference;
+    progressRing.style.strokeDashoffset = offset;
+  }
+
   function startTimer() {
     if (!isRunning) {
       isRunning = true;
@@ -97,11 +501,14 @@
       timerInterval = setInterval(() => {
         remainingTime--;
         updateDisplay();
+        updateProgress();
         if (remainingTime <= 0) {
           clearInterval(timerInterval);
-          alarmSound.play();
-          motivationalMsg.style.display = 'block';
           isRunning = false;
+          alarmSound.play();
+          const message = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
+          motivationalMsg.textContent = message;
+          motivationalMsg.style.display = 'block';
         }
       }, 1000);
     }
@@ -116,9 +523,7 @@
 
   function resetTimer() {
     pauseTimer();
-    remainingTime = timerDuration;
-    updateDisplay();
-    motivationalMsg.style.display = 'none';
+    updateMode(currentMode, true);
   }
 
   startBtn.addEventListener('click', startTimer);
@@ -126,6 +531,7 @@
   resetBtn.addEventListener('click', resetTimer);
 
   updateDisplay();
+  updateProgress();
 </script>
 </body>
 </html>
